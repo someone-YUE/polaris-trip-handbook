@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>旅行攻略问卷</title>
+<style>
+  :root {
+    --bg: #faf6f0; --card: #fffdf9; --card-2: #f6efe5;
+    --ink: #3d3229; --ink-2: #8a7a6a; --line: #eadfd2;
+    --accent: #d97b4a; --accent-soft: #fbeadd; --shadow: 0 2px 10px rgba(93,70,46,.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #201a15; --card: #2a231c; --card-2: #322a21;
+      --ink: #ece3d6; --ink-2: #a89a89; --line: #3a3128;
+      --accent: #e8905c; --accent-soft: #3d2f22; --shadow: 0 2px 10px rgba(0,0,0,.35);
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.65 -apple-system, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif; }
+  #app { max-width: 680px; margin: 0 auto; padding: 18px 14px 80px; }
+  h1 { font-family: "Songti SC", "STSong", serif; font-size: 24px; margin: 8px 0 2px; letter-spacing: 1px; }
+  .sub { color: var(--ink-2); font-size: 13px; margin: 0 0 18px; }
+  fieldset { border: 1px solid var(--line); border-radius: 14px; background: var(--card);
+    box-shadow: var(--shadow); margin: 0 0 14px; padding: 14px 16px; }
+  legend { font-weight: 600; padding: 0 8px; font-size: 15px; }
+  legend .req { color: var(--accent); }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0; }
+  .field { flex: 1 1 180px; display: flex; flex-direction: column; gap: 4px; }
+  .field.narrow { flex: 0 1 96px; }
+  .field.mini { flex: 0 1 56px; }
+  label { font-size: 13px; color: var(--ink-2); }
+  .hint { font-size: 12px; color: var(--ink-2); margin: 2px 0 0; line-height: 1.5; }
+  input[type=text], input[type=date], input[type=number], input[type=time], select, textarea {
+    border: 1px solid var(--line); border-radius: 10px; background: var(--card-2); color: var(--ink);
+    padding: 8px 10px; font: inherit; width: 100%;
+  }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+  textarea { min-height: 64px; resize: vertical; }
+  .derived { font-size: 13px; color: var(--accent); font-weight: 600; }
+  .citylist { display: flex; flex-direction: column; gap: 8px; }
+  .cityrow { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
+  .cityrow .field { flex: 1 1 150px; }
+  .cityrow .rm { flex: 0 0 auto; background: var(--card); color: var(--ink-2);
+    border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 13px; cursor: pointer; }
+  .cityrow .rm:hover { color: var(--accent); border-color: var(--accent); }
+  .addbtn { background: var(--card); color: var(--accent); border: 1px dashed var(--accent);
+    border-radius: 10px; padding: 7px 14px; font-size: 13px; cursor: pointer; }
+  .tag { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 999px;
+    background: var(--accent-soft); color: var(--accent); margin-left: 6px; vertical-align: 1px; }
+  .sliderwrap { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+  .sliderwrap .end { font-size: 12px; color: var(--ink-2); white-space: nowrap; }
+  input[type=range] { flex: 1; accent-color: var(--accent); padding: 0; background: transparent; }
+  #tp-profile-label { text-align: center; font-size: 13px; color: var(--accent); font-weight: 600; margin-top: 4px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { cursor: pointer; }
+  .chip input { display: none; }
+  .chip span { display: inline-block; border: 1px solid var(--line); border-radius: 999px;
+    padding: 3px 12px; font-size: 13px; color: var(--ink-2); background: var(--card-2); }
+  .chip input:checked + span { background: var(--accent-soft); color: var(--accent);
+    border-color: var(--accent); font-weight: 600; }
+  .btnrow { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+  button { border: none; border-radius: 10px; padding: 10px 16px; font-size: 14px; cursor: pointer; background: var(--accent); color: #fff; }
+  button.ghost { background: var(--card); color: var(--ink); border: 1px solid var(--line); }
+  button:active { transform: translateY(1px); }
+  #output { display: none; margin-top: 16px; }
+  #output.show { display: block; }
+  #prompt-text { white-space: pre-wrap; font-size: 13px; background: var(--card-2);
+    border: 1px solid var(--line); border-radius: 12px; padding: 12px; max-height: 320px; overflow: auto; }
+  #toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(16px);
+    background: var(--ink); color: var(--bg); padding: 8px 16px; border-radius: 999px; font-size: 13px;
+    opacity: 0; pointer-events: none; transition: all .25s; z-index: 9; }
+  #toast.show { opacity: .95; transform: translateX(-50%); }
+</style>
+</head>
+<body>
+<div id="app">
+  <h1>旅行攻略问卷</h1>
+  <p class="sub">带 <span style="color:var(--accent)">*</span> 的必填，其余可跳过（会自动给保守默认值，不再追问）。草稿自动存在本机浏览器。</p>
+
+  <form id="q">
+    <fieldset>
+      <legend>基础信息 <span class="req">*</span></legend>
+      <div class="row">
+        <div class="field"><label>出发地</label><input type="text" id="f-origin" placeholder="例：北京"></div>
+        <div class="field"><label>目的地</label><input type="text" id="f-dest" placeholder="例：天津"></div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>出发日期</label><input type="date" id="f-start">
+        </div>
+        <div class="field narrow">
+          <label>出发时段</label>
+          <select id="f-start-period">
+            <option value="">不限</option>
+            <option value="morning">上午</option>
+            <option value="noon">中午</option>
+            <option value="afternoon">下午</option>
+            <option value="evening">傍晚</option>
+            <option value="night">晚上</option>
+          </select>
+        </div>
+        <div class="field narrow">
+          <label>具体时间（可选）</label><input type="time" id="f-start-time">
+        </div>
+      </div>
+      <p class="hint" style="margin:-2px 0 6px">下班后出发？把时段选「傍晚」或「晚上」，或直接填具体时间。</p>
+      <div class="row">
+        <div class="field">
+          <label>返程日期</label><input type="date" id="f-end">
+        </div>
+        <div class="field narrow">
+          <label>返程时段</label>
+          <select id="f-end-period">
+            <option value="">不限</option>
+            <option value="morning">上午</option>
+            <option value="noon">中午</option>
+            <option value="afternoon">下午</option>
+            <option value="evening">傍晚</option>
+            <option value="night">晚上</option>
+          </select>
+        </div>
+        <div class="field narrow">
+          <label>具体时间（可选）</label><input type="time" id="f-end-time">
+        </div>
+      </div>
+      <p class="hint" style="margin:-2px 0 6px">要赶在上班前回来？把返程时段选「上午」或填具体时间。</p>
+
+      <label style="margin-top:8px">途经城市（可选，按顺序；不填就是单一目的地）</label>
+      <div class="citylist" id="f-vias"></div>
+      <button type="button" class="addbtn" id="btn-add-via" style="margin-top:8px">+ 添加途经城市</button>
+      <div class="row" style="margin-top:10px">
+        <div class="field">
+          <label>行程节奏（自动生成，无需填写）</label>
+          <div class="derived" id="f-span-readout">先填上方日期</div>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>同行与作息</legend>
+      <div class="row">
+        <div class="field"><label>同行关系</label>
+          <select id="f-groups-sel">
+            <option value="独自出行">独自出行（1 人）</option>
+            <option value="情侣/夫妻">情侣 / 夫妻</option>
+            <option value="朋友结伴">朋友结伴</option>
+            <option value="家庭出行">家庭出行</option>
+            <option value="亲子出行">亲子出行</option>
+            <option value="同事/团队">同事 / 团队</option>
+            <option value="__custom__">其他（自己填）</option>
+          </select>
+        </div>
+        <div class="field" id="groups-custom-wrap" style="display:none">
+          <label>补充说明</label><input type="text" id="f-groups-custom" placeholder="例：3 位朋友 + 1 只狗">
+        </div>
+      </div>
+      <div class="row">
+        <div class="field mini"><label>人数</label><input type="number" id="f-count" min="1" value="2"></div>
+        <div class="field mini"><label>房间数</label><input type="number" id="f-rooms" min="1" value="1"></div>
+        <div class="field"><label>每天几点起床（可选）</label><input type="text" id="f-wake" placeholder="例：自然醒（赶早市时 07:30 前）"></div>
+        <div class="field"><label>每天几点休息（可选）</label><input type="text" id="f-sleep" placeholder="例：23:00 前"></div>
+      </div>
+      <div class="field">
+        <label>你想怎么玩？（随便说，越具体越好）</label>
+        <textarea id="f-rhythm" placeholder="例：不想赶，一天一两个重点，主打逛吃，晚上去夜市；博物馆要有，但不看红色景点；愿意为好吃的排一小时队。"></textarea>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>出行方式 <span class="req">*</span></legend>
+      <p class="sub" style="margin:0 0 8px">只需告诉我们你的<b>倾向</b>，具体坐哪趟由系统按「最划算」自动比价，不用自己查班次。</p>
+      <div class="field">
+        <label>倾向怎么走（单选）</label>
+        <select id="f-tp-pref">
+          <option value="any">不限 —— 哪种划算选哪种（默认，现阶段按价格最低）</option>
+          <option value="prefer-rail">倾向高铁 —— 高铁优先，短途不折腾</option>
+          <option value="prefer-flight">倾向飞机 —— 长途优先飞，省时间</option>
+          <option value="prefer-drive">倾向自驾 —— 自己有车，走哪停哪</option>
+          <option value="allow-combo">允许组合 —— 高铁+飞机混着来</option>
+          <option value="rail-only">必须高铁/火车 —— 不坐飞机</option>
+          <option value="flight-only">必须飞机 —— 只坐飞机</option>
+        </select>
+      </div>
+      <div class="field" style="margin-top:8px">
+        <label>在意什么（拖动滑块，决定比价口径）</label>
+        <div class="sliderwrap">
+          <span class="end">省钱</span>
+          <input type="range" id="f-tp-profile" min="0" max="2" step="1" value="0">
+          <span class="end">舒适</span>
+        </div>
+        <div id="tp-profile-label">省钱优先 —— 只看总花费最低（现阶段默认）</div>
+      </div>
+      <div class="field" style="margin-top:8px">
+        <label>已定好的班次（可选；如果票已经买了再填，没买就留空）</label>
+        <textarea id="f-transport" placeholder="每行一段：日期,方式(航班/高铁/城际/普速/自驾/长途汽车),出发站,到达站,状态(已确认/待出票)&#10;例：2027-03-12,高铁,北京南,天津,已确认"></textarea>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>偏好与限制（可选）</legend>
+      <div class="field"><label>兴趣标签（点选）</label>
+        <div class="chips" id="f-interests">
+          <label class="chip"><input type="checkbox" value="早市"><span>早市</span></label>
+          <label class="chip"><input type="checkbox" value="夜市"><span>夜市</span></label>
+          <label class="chip"><input type="checkbox" value="博物馆"><span>博物馆</span></label>
+          <label class="chip"><input type="checkbox" value="老街"><span>老街</span></label>
+          <label class="chip"><input type="checkbox" value="自然轻徒步"><span>自然轻徒步</span></label>
+          <label class="chip"><input type="checkbox" value="泡澡洗浴"><span>泡澡洗浴</span></label>
+          <label class="chip"><input type="checkbox" value="韩餐"><span>韩餐</span></label>
+          <label class="chip"><input type="checkbox" value="烧烤"><span>烧烤</span></label>
+          <label class="chip"><input type="checkbox" value="咖啡甜品"><span>咖啡甜品</span></label>
+          <label class="chip"><input type="checkbox" value="拍照"><span>拍照</span></label>
+          <label class="chip"><input type="checkbox" value="二人转"><span>二人转</span></label>
+        </div>
+      </div>
+      <div class="field"><label>预算</label>
+        <input type="text" id="f-budget" placeholder="例：¥200-350/间/晚">
+        <p class="hint">可填每晚房价区间（按房间计价），也可以只写个大概，例：经济舒适档 ¥200-350/间/晚。</p>
+      </div>
+      <div class="row">
+        <div class="field"><label>特别想去（逗号分隔）</label><input type="text" id="f-mustgo" placeholder="例：沈阳故宫, 延吉民俗园写真"></div>
+        <div class="field"><label>明确避开（逗号分隔）</label><input type="text" id="f-avoid" placeholder="例：电竞酒店"></div>
+      </div>
+      <div class="field"><label>健康 / 饮食 / 行动限制，或其他说明</label>
+        <textarea id="f-notes" placeholder="例：只去禁烟网咖；有人不吃香菜"></textarea></div>
+    </fieldset>
+
+    <div class="btnrow">
+      <button type="button" id="btn-gen">生成开工提示词与 brief.json</button>
+      <button type="button" class="ghost" id="btn-reset">清空草稿</button>
+    </div>
+  </form>
+
+  <div id="output">
+    <fieldset>
+      <legend>输出</legend>
+      <pre id="prompt-text"></pre>
+      <div class="btnrow">
+        <button type="button" id="btn-copy">复制提示词</button>
+        <button type="button" class="ghost" id="btn-brief">下载 brief.json</button>
+      </div>
+      <p class="sub" style="margin-top:10px">brief.json 用法：交给 Agent 执行 <code>generate.py new &lt;行程名&gt; --brief brief.json</code>，或直接把提示词发给 Agent 由其代填。</p>
+    </fieldset>
+  </div>
+</div>
+<div id="toast"></div>
+<script>
+(() => {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const DRAFT_KEY = "thb:questionnaire-draft";
+  const FIELDS = ["f-origin", "f-dest", "f-start", "f-start-period", "f-start-time",
+    "f-end", "f-end-period", "f-end-time", "f-count", "f-rooms",
+    "f-groups-sel", "f-groups-custom", "f-wake", "f-sleep", "f-rhythm",
+    "f-tp-pref", "f-tp-profile", "f-transport", "f-budget", "f-mustgo", "f-avoid", "f-notes"];
+
+  // 比价口径滑块：0 省钱 / 1 均衡 / 2 舒适（保持与后端三档 key 一致）
+  const PROFILE_BY_SLIDER = ["thrifty", "balanced", "comfort"];
+  const PROFILE_LABELS = {
+    thrifty: "省钱优先 —— 只看总花费最低（现阶段默认）",
+    balanced: "均衡 —— 省钱和耗时都考虑",
+    comfort: "舒适优先 —— 愿意多花钱换快和舒服",
+  };
+  const PERIOD_LABELS = { morning: "上午", noon: "中午", afternoon: "下午",
+    evening: "傍晚", night: "晚上" };
+
+  // ---- 途经城市行（动态增删）----
+  function addViaRow(city, nights, area) {
+    const wrap = $("f-vias");
+    const row = document.createElement("div");
+    row.className = "cityrow";
+    row.innerHTML =
+      '<div class="field"><label>城市</label><input type="text" class="via-city" placeholder="例：济南"></div>' +
+      '<div class="field"><label>晚数（可留空自动分配）</label><input type="number" class="via-nights" min="1" placeholder="自动"></div>' +
+      '<div class="field"><label>意向商圈（可选）</label><input type="text" class="via-area" placeholder="例：江汉路"></div>' +
+      '<button type="button" class="rm" title="删除这一行">删除</button>';
+    wrap.appendChild(row);
+    if (city) row.querySelector(".via-city").value = city;
+    if (nights) row.querySelector(".via-nights").value = nights;
+    if (area) row.querySelector(".via-area").value = area;
+    row.querySelector(".rm").addEventListener("click", () => { row.remove(); refreshDerived(); saveDraft(); });
+    row.addEventListener("input", refreshDerived);
+    refreshDerived();
+    return row;
+  }
+  function readVias() {
+    return [...document.querySelectorAll("#f-vias .cityrow")].map((row) => {
+      const city = row.querySelector(".via-city").value.trim();
+      const rawNights = row.querySelector(".via-nights").value.trim();
+      const nights = rawNights ? (parseInt(rawNights, 10) || 0) : null;
+      const area = row.querySelector(".via-area").value.trim();
+      const item = { city, nights };
+      if (area) item.area = area;
+      return item;
+    }).filter((r) => r.city);
+  }
+
+  // ---- 晚数自动推导：按日期跨度分摊到各城 ----
+  // 规则：城市数 == 途经城市数 + 1（目的地）。
+  // 用户填了晚数就尊重；没填的按剩余晚数均分，余数从第一城起依次 +1。
+  function deriveNights() {
+    const start = $("f-start").value, end = $("f-end").value;
+    const dest = $("f-dest").value.trim();
+    const vias = readVias().filter((v) => v.city);
+    const cities = [...vias.map((v) => v.city)];
+    if (dest) cities.push(dest);
+    if (!cities.length) return { cities: [], totalNights: 0, spanDays: 0, error: "需要至少一个目的地" };
+
+    let spanDays = 0;
+    if (start && end) {
+      const s = new Date(start + "T00:00:00"), e = new Date(end + "T00:00:00");
+      if (e < s) return { cities, totalNights: 0, spanDays: 0, error: "返程日期早于出发日期" };
+      spanDays = Math.round((e - s) / 86400000) + 1;
+    }
+    const totalNights = Math.max(0, spanDays - 1);
+    if (!spanDays) return { cities, totalNights: 0, spanDays: 0, error: "" };
+
+    // 每城先定「已填晚数」
+    const rows = [...vias.map((v) => ({ city: v.city, area: v.area, nights: v.nights })),
+      { city: dest, area: "", nights: null }];
+    const fixed = rows.reduce((a, r) => a + (r.nights || 0), 0);
+    const blanks = rows.filter((r) => !r.nights).length;
+    if (fixed > totalNights) {
+      return { cities, totalNights, spanDays,
+        error: `已填晚数 ${fixed} 超过可用的 ${totalNights} 晚，请调整` };
+    }
+    let remain = totalNights - fixed;
+    const base = blanks ? Math.floor(remain / blanks) : 0;
+    let extra = blanks ? remain - base * blanks : 0;
+    rows.forEach((r) => {
+      if (r.nights) return;
+      r.nights = base + (extra > 0 ? 1 : 0);
+      if (extra > 0) extra -= 1;
+    });
+    return { cities, totalNights, spanDays, rows, error: "" };
+  }
+
+  function refreshDerived() {
+    const d = deriveNights();
+    const el = $("f-span-readout");
+    if (d.error) { el.textContent = "⚠️ " + d.error; return; }
+    if (!d.spanDays) { el.textContent = "先填上方日期"; return; }
+    const parts = (d.rows || []).map((r) => `${r.city} ${r.nights} 晚`);
+    el.textContent = `共 ${d.spanDays} 天 ${d.totalNights} 晚 ｜ ` + parts.join(" → ");
+  }
+
+  function syncGroupsUI() {
+    const isCustom = $("f-groups-sel").value === "__custom__";
+    $("groups-custom-wrap").style.display = isCustom ? "" : "none";
+    // 单人自动把人数/房间数收敛到 1，避免自相矛盾
+    if ($("f-groups-sel").value === "独自出行") {
+      $("f-count").value = "1";
+      $("f-rooms").value = "1";
+    }
+  }
+
+  function syncProfileUI() {
+    const key = PROFILE_BY_SLIDER[parseInt($("f-tp-profile").value, 10) || 0];
+    $("tp-profile-label").textContent = PROFILE_LABELS[key];
+  }
+
+  function collect() {
+    const d = deriveNights();
+    const route = (d.rows || []).map((r) => {
+      const item = { city: r.city, nights: r.nights };
+      if (r.area) item.area = r.area;
+      return item;
+    });
+    const transport = $("f-transport").value.split("\n").map((l) => l.trim()).filter(Boolean).map((line) => {
+      const [date, modeText, dep, arr, statusText] = line.split(/[,，]/).map((s) => s.trim());
+      const modeMap = { "航班": "flight", "飞机": "flight", "高铁": "high-speed-rail",
+        "城际": "intercity-rail", "普速": "normal-rail", "火车": "normal-rail",
+        "自驾": "drive", "长途汽车": "coach", "大巴": "coach" };
+      const leg = {
+        mode: modeMap[modeText] || "", date: date || "",
+        departure: { station: dep || "" }, arrival: { station: arr || "" },
+        status: statusText === "已确认" ? "confirmed" : "pending",
+        note: "",
+      };
+      return leg;
+    }).filter((l) => l.mode); // 方式识别不出来的行丢弃，不猜
+    const interests = [...document.querySelectorAll("#f-interests input:checked")].map((b) => b.value);
+    const groupsSel = $("f-groups-sel").value;
+    const groups = groupsSel === "__custom__"
+      ? ($("f-groups-custom").value.trim() || "未填写")
+      : groupsSel;
+    const brief = {
+      trip: {
+        title: "", origin: $("f-origin").value.trim(),
+        start_date: $("f-start").value, end_date: $("f-end").value,
+        rhythm: $("f-rhythm").value.trim(),
+        wake_time: $("f-wake").value.trim() || "自然醒",
+        sleep_time: $("f-sleep").value.trim() || "23:00 前",
+      },
+      travelers: {
+        count: parseInt($("f-count").value, 10) || 2,
+        groups,
+        rooms_per_night: parseInt($("f-rooms").value, 10) || 1,
+      },
+      route,
+      transport_facts: transport,
+      preferences: {
+        budget: $("f-budget").value.trim(),
+        interests,
+        must_go: $("f-mustgo").value.split(/[,，]/).map((s) => s.trim()).filter(Boolean),
+        avoid: $("f-avoid").value.split(/[,，]/).map((s) => s.trim()).filter(Boolean),
+        restrictions: "",
+        notes: $("f-notes").value.trim(),
+        // 出发/返程的时段与具体时间（需求 1：下班后出发、上班前回来）
+        start_period: $("f-start-period").value || "",
+        start_time: $("f-start-time").value || "",
+        end_period: $("f-end-period").value || "",
+        end_time: $("f-end-time").value || "",
+        // 出行方式两层问法的第一层：倾向 + 比价口径（第二层是上面的 transport_facts）
+        transport_preference: $("f-tp-pref").value || "any",
+        transport_profile: PROFILE_BY_SLIDER[parseInt($("f-tp-profile").value, 10) || 0],
+      },
+    };
+    return brief;
+  }
+
+  function promptText(b) {
+    const t = b.trip;
+    const lines = [];
+    lines.push("请用 trip-handbook-maker 为我生成一份可分享、可勾选的旅行攻略网页（handbook.html）。");
+    lines.push("");
+    lines.push("【行程骨架】");
+    lines.push(`出发地：${t.origin || "（未填）"}`);
+    const p = b.preferences;
+    const timeWord = (date, period, hhmm) =>
+      `${date || "?"}${period ? "（" + PERIOD_LABELS[period] + "）" : ""}${hhmm ? " " + hhmm : ""}`;
+    lines.push(`出发：${timeWord(t.start_date, p.start_period, p.start_time)}`);
+    lines.push(`返程：${timeWord(t.end_date, p.end_period, p.end_time)}`);
+    if (b.route.length) {
+      b.route.forEach((r, i) => {
+        const tag = i === b.route.length - 1 ? "目的地" : "途经";
+        lines.push(`- ${r.city}（${tag}）${r.nights} 晚${r.area ? "，意向商圈：" + r.area : ""}`);
+      });
+    } else {
+      lines.push("城市与晚数：（未填，请先向我确认）");
+    }
+    lines.push(`你想怎么玩：${t.rhythm || "（未填，按均衡默认）"}`);
+    lines.push("");
+    lines.push("【同行与作息】");
+    lines.push(`${b.travelers.count} 人（${b.travelers.groups}），每晚 ${b.travelers.rooms_per_night} 间房`);
+    lines.push(`起床 ${t.wake_time}；休息 ${t.sleep_time}`);
+    if (p.start_period === "evening" || p.start_period === "night" || (p.start_time && p.start_time >= "17:00"))
+      lines.push("- 出发日可能是下班后出发，白天要上班，行程从抵达后算起，别排白天的项目");
+    if (p.end_period === "morning" || (p.end_time && p.end_time <= "12:00"))
+      lines.push("- 返程日要赶在上班前回来，返程尽早，当天不安排游玩");
+    lines.push("");
+    lines.push("【出行方式】");
+    const prefText = { "any": "不限（哪种划算选哪种）", "prefer-rail": "倾向高铁",
+      "prefer-flight": "倾向飞机", "prefer-drive": "倾向自驾",
+      "allow-combo": "允许高铁+飞机组合", "rail-only": "必须高铁/火车（不坐飞机）",
+      "flight-only": "必须飞机" }[p.transport_preference] || "不限";
+    const profText = { "thrifty": "省钱优先（总花费最低）", "balanced": "均衡（省钱+耗时）",
+      "comfort": "舒适优先（愿多花钱换快和舒服）" }[p.transport_profile] || "省钱优先";
+    lines.push(`倾向：${prefText}；比价口径：${profText}`);
+    if (b.transport_facts.length) {
+      lines.push("已定班次：");
+      b.transport_facts.forEach((l) => lines.push(`- ${l.date} ${l.departure.station} → ${l.arrival.station}（${{ flight: "航班", "high-speed-rail": "高铁", "intercity-rail": "城际", "normal-rail": "普速", drive: "自驾", coach: "长途汽车" }[l.mode] || l.mode}，${l.status === "confirmed" ? "已确认" : "待出票"}）`));
+    } else {
+      lines.push("已定班次：暂无（票未定，请按上面倾向用 transport.py 比价后给建议，价格表见 assets/transport-fares.json）");
+    }
+    const extras = [];
+    if (p.interests.length) extras.push(`兴趣：${p.interests.join("、")}`);
+    if (p.budget) extras.push(`预算：${p.budget}`);
+    if (p.must_go.length) extras.push(`必去：${p.must_go.join("、")}`);
+    if (p.avoid.length) extras.push(`避开：${p.avoid.join("、")}`);
+    if (p.notes) extras.push(`其他：${p.notes}`);
+    if (extras.length) {
+      lines.push("");
+      lines.push("【偏好】");
+      extras.forEach((x) => lines.push("- " + x));
+    }
+    lines.push("");
+    lines.push("要求：");
+    lines.push("1) 交通先比价：用 scripts/transport.py 按上面的「倾向 + 比价口径」为每段选出最优方式，价格从 assets/transport-fares.json 读；价表缺数据时如实告诉我缺什么，不要猜价格。");
+    lines.push("2) 再按规则引擎搭 0 token 骨架，补逐日主题与逐城明细（不编造营业时间/价格，动态信息标“待核验”）。");
+    lines.push("3) 校验通过后渲染单文件 handbook.html。");
+    return lines.join("\n");
+  }
+
+  function validateBrief(b) {
+    const problems = [];
+    if (!b.trip.origin) problems.push("出发地未填");
+    if (!b.trip.start_date || !b.trip.end_date) problems.push("出发/返程日期未填");
+    const d = deriveNights();
+    if (d.error) problems.push(d.error);
+    if (!b.route.length) problems.push("至少填一个目的地（可在基础信息里添加途经城市）");
+    b.route.forEach((r, i) => {
+      if (r.nights < 1) problems.push(`第 ${i + 1} 个城市晚数无效：${r.city}（可用天数不足，请调整日期或晚数）`);
+    });
+    return problems;
+  }
+
+  function saveDraft() {
+    const data = {};
+    FIELDS.forEach((id) => { data[id] = $(id).value; });
+    data["__interests"] = [...document.querySelectorAll("#f-interests input:checked")].map((b) => b.value);
+    data["__vias"] = [...document.querySelectorAll("#f-vias .cityrow")].map((row) => ({
+      city: row.querySelector(".via-city").value,
+      nights: row.querySelector(".via-nights").value,
+      area: row.querySelector(".via-area").value,
+    }));
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(data)); } catch (e) {}
+  }
+  function loadDraft() {
+    let data = null;
+    try { data = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); } catch (e) {}
+    if (!data) return;
+    FIELDS.forEach((id) => { if (data[id] != null && $(id)) $(id).value = data[id]; });
+    (data.__interests || []).forEach((v) => {
+      const box = document.querySelector(`#f-interests input[value="${v}"]`);
+      if (box) box.checked = true;
+    });
+    (data.__vias || []).forEach((v) => addViaRow(v.city, v.nights, v.area));
+  }
+
+  let lastBrief = null;
+  function toast(msg) {
+    const t = $("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(t._h);
+    t._h = setTimeout(() => t.classList.remove("show"), 2200);
+  }
+  function copyText(text) {
+    const done = () => toast("已复制");
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, () => fb());
+    else fb();
+    function fb() {
+      const ta = document.createElement("textarea");
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); done(); } catch (e) { toast("复制失败，请手动复制"); }
+      document.body.removeChild(ta);
+    }
+  }
+
+  $("q").addEventListener("input", saveDraft);
+  $("q").addEventListener("change", saveDraft);
+  $("btn-gen").addEventListener("click", () => {
+    const brief = collect();
+    const problems = validateBrief(brief);
+    if (problems.length) {
+      toast("请先补齐：" + problems.join("；"));
+      return;
+    }
+    lastBrief = brief;
+    $("prompt-text").textContent = promptText(brief);
+    $("output").classList.add("show");
+    $("output").scrollIntoView({ behavior: "smooth" });
+  });
+  $("btn-copy").addEventListener("click", () => {
+    if (!lastBrief) { toast("先生成提示词"); return; }
+    copyText($("prompt-text").textContent);
+  });
+  $("btn-brief").addEventListener("click", () => {
+    if (!lastBrief) { toast("先生成提示词"); return; }
+    const blob = new Blob([JSON.stringify(lastBrief, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "brief.json";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    toast("已下载 brief.json");
+  });
+  $("btn-reset").addEventListener("click", () => {
+    if (!confirm("清空全部填写内容？")) return;
+    FIELDS.forEach((id) => { if ($(id)) $(id).value = ""; });
+    $("f-count").value = "2"; $("f-rooms").value = "1";
+    $("f-groups-sel").value = "独自出行";
+    document.querySelectorAll("#f-interests input").forEach((b) => { b.checked = false; });
+    $("f-vias").innerHTML = "";
+    try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+    $("output").classList.remove("show");
+    syncGroupsUI(); syncProfileUI(); refreshDerived();
+    toast("已清空");
+  });
+
+  // 事件绑定：途经城市增删、同行关系联动、滑块文案、晚数实时推导
+  $("btn-add-via").addEventListener("click", () => { addViaRow("", "", ""); saveDraft(); });
+  $("f-groups-sel").addEventListener("change", () => { syncGroupsUI(); saveDraft(); });
+  $("f-tp-profile").addEventListener("input", syncProfileUI);
+  ["f-start", "f-end", "f-dest"].forEach((id) =>
+    $(id).addEventListener("input", refreshDerived));
+  $("f-start").addEventListener("change", refreshDerived);
+  $("f-end").addEventListener("change", refreshDerived);
+
+  loadDraft();
+  syncGroupsUI();
+  syncProfileUI();
+  refreshDerived();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>旅行攻略</title>
+<style>
+  /* 盛京红 · 沈阳气质：宫墙红 + 琉璃金 + 宣纸米白 */
+  :root {
+    --bg: #f7f2e8;
+    --card: #fffdf7;
+    --card-2: #f2ead9;
+    --ink: #37302a;
+    --ink-2: #8b7d6c;
+    --line: #e5d8c3;
+    --accent: #a63e2c;
+    --accent-deep: #7e2d20;
+    --accent-soft: #f6e2da;
+    --gold: #b08a2e;
+    --gold-soft: #f4e9cf;
+    --ok: #5e7d4c;
+    --warn-bg: #f7ecd0;
+    --warn-ink: #8a6a1c;
+    --shadow: 0 2px 10px rgba(80, 50, 30, 0.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #181110;
+      --card: #241a15;
+      --card-2: #2d221a;
+      --ink: #eee2d0;
+      --ink-2: #a5967f;
+      --line: #3d2f24;
+      --accent: #d96a4a;
+      --accent-deep: #f08a67;
+      --accent-soft: #39221a;
+      --gold: #d0a84d;
+      --gold-soft: #332a18;
+      --ok: #8fae7c;
+      --warn-bg: #3f3418;
+      --warn-ink: #e0c069;
+      --shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 15px/1.65 -apple-system, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+  }
+  #app { max-width: 760px; margin: 0 auto; padding: 0 14px 60px; }
+
+  /* ---------- 封面 ---------- */
+  .cover {
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 88% 10%, var(--gold-soft) 0 44px, transparent 45px),
+      radial-gradient(circle at 4% 92%, var(--accent-soft) 0 30px, transparent 31px),
+      var(--card);
+    border: 1px solid var(--line);
+    border-top: none;
+    border-radius: 0 0 18px 18px;
+    box-shadow: var(--shadow);
+    padding: 24px 20px 18px;
+    margin: 0 0 10px;
+  }
+  .cover::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: linear-gradient(90deg, var(--gold), var(--accent) 35%, var(--accent-deep) 65%, var(--gold));
+  }
+  .cover h1 {
+    margin: 2px 0 6px;
+    font-family: "Songti SC", "STSong", "SimSun", serif;
+    font-size: 26px;
+    letter-spacing: 1px;
+  }
+  .cover .meta { color: var(--ink-2); font-size: 13px; margin: 2px 0; }
+  .cover .route { font-size: 15px; margin: 10px 0 2px; font-weight: 600; }
+  .cover .route .arrow { color: var(--accent); margin: 0 4px; }
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .badge {
+    background: var(--card-2);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 2px 10px;
+    font-size: 12px;
+    color: var(--ink-2);
+  }
+  .badge.accent { background: var(--accent-soft); border-color: transparent; color: var(--accent); font-weight: 600; }
+  .badge.gold { background: var(--gold-soft); border-color: transparent; color: var(--gold); font-weight: 600; }
+  .badge.warn { background: var(--warn-bg); color: var(--warn-ink); border-color: transparent; }
+
+  /* ---------- 日历条 ---------- */
+  .cal {
+    position: sticky;
+    top: 0;
+    z-index: 9;
+    background: var(--bg);
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 10px 2px;
+    border-bottom: 1px dashed var(--line);
+    scrollbar-width: none;
+  }
+  .cal::-webkit-scrollbar { display: none; }
+  .cal-chip {
+    flex: 0 0 auto;
+    min-width: 60px;
+    text-align: center;
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    padding: 5px 8px 4px;
+    background: var(--card);
+    cursor: pointer;
+    font-family: inherit;
+    color: var(--ink);
+  }
+  .cal-chip .c1 { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; display: block; line-height: 1.3; }
+  .cal-chip .c2 { font-size: 11px; color: var(--ink-2); display: block; }
+  .cal-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .cal-chip.active .c2 { color: rgba(255, 255, 255, 0.85); }
+  .cal-chip.today .c1::after { content: "今"; font-size: 9px; color: var(--gold); margin-left: 2px; vertical-align: 2px; }
+  .cal-chip.active.today .c1::after { color: var(--gold-soft); }
+  .cal-chip.cal-all { min-width: auto; padding: 5px 14px; align-self: stretch; }
+  .cal-chip.has-check .c1 { color: var(--ok); }
+  .cal-chip.active.has-check .c1 { color: #fff; }
+
+  /* ---------- 区块 ---------- */
+  section { margin-top: 26px; }
+  section > h2 {
+    font-size: 19px;
+    margin: 0 0 12px;
+    padding-left: 10px;
+    border-left: 4px solid var(--accent);
+    font-family: "Songti SC", "STSong", serif;
+    letter-spacing: 1px;
+  }
+  .hint { color: var(--ink-2); font-size: 13px; margin: 0 0 10px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+
+  /* ---------- 日卡片 ---------- */
+  details.day > summary {
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+  }
+  details.day > summary::-webkit-details-marker { display: none; }
+  details.day > summary::after { content: "▾"; color: var(--ink-2); margin-left: auto; }
+  details.day:not([open]) > summary::after { content: "▸"; }
+  .d-date { color: var(--accent); font-variant-numeric: tabular-nums; }
+  .d-city {
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-radius: 6px;
+    padding: 0 8px;
+    font-size: 13px;
+  }
+  .d-kind {
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    border-radius: 6px;
+    padding: 0 6px;
+    font-size: 12px;
+  }
+  .d-summary { color: var(--ink-2); font-size: 14px; margin: 10px 0 4px; }
+  .periods { display: grid; gap: 4px; margin: 8px 0 2px; }
+  .p { display: flex; gap: 8px; align-items: baseline; }
+  .p-tag {
+    flex: 0 0 auto;
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    background: var(--gold-soft);
+    color: var(--gold);
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .p p { margin: 0; font-size: 14px; }
+
+  /* ---------- 停靠点时间线（每日线路图主体） ---------- */
+  ol.route { list-style: none; margin: 12px 0 0; padding: 0; position: relative; }
+  ol.route::before {
+    content: "";
+    position: absolute;
+    left: 6px;
+    top: 14px;
+    bottom: 14px;
+    width: 2px;
+    background: linear-gradient(var(--gold), var(--accent));
+    opacity: 0.45;
+  }
+  li.r-stop { position: relative; padding: 6px 0 10px 26px; }
+  li.r-stop .r-dot {
+    position: absolute;
+    left: 0;
+    top: 12px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--card);
+    border: 3.5px solid var(--accent);
+    box-shadow: 0 0 0 2.5px var(--gold-soft);
+  }
+  li.r-stop:first-child .r-dot { background: var(--gold); border-color: var(--gold); }
+  .r-edge {
+    margin: 0 0 2px 26px;
+    padding: 0 0 0 0;
+    font-size: 12px;
+    color: var(--gold);
+    font-weight: 600;
+    position: relative;
+  }
+  .r-edge::before { content: "↳ "; }
+  .s-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .s-time { font-variant-numeric: tabular-nums; color: var(--accent); font-weight: 700; font-size: 16px; }
+  .s-name { font-weight: 700; color: var(--ink); text-decoration: none; }
+  a.s-name { border-bottom: 2px solid var(--gold-soft); }
+  a.s-name:hover { color: var(--accent); border-color: var(--accent); }
+  .s-type { font-size: 11px; color: var(--ink-2); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
+  .s-cost { font-size: 12px; color: var(--ink-2); }
+  .s-note { margin: 4px 0 0; font-size: 14px; }
+  .s-guard { margin: 4px 0 0; font-size: 13px; color: var(--warn-ink); }
+  li.r-stop.transport {
+    background: var(--gold-soft);
+    border-radius: 10px;
+    padding: 10px 12px 10px 26px;
+  }
+  li.r-stop.transport .r-dot { background: var(--gold); border-color: var(--gold); top: 14px; }
+
+  /* 链接胶囊（加大点击区，同页跳转） */
+  .s-map {
+    display: inline-block;
+    font-size: 12.5px;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border-radius: 999px;
+    padding: 3px 10px;
+    text-decoration: none;
+    border: 1px solid transparent;
+  }
+  .s-map.xhs { color: var(--ink-2); background: var(--card-2); }
+  .s-map:active, .s-map:hover { border-color: var(--accent); }
+
+  /* ---------- 每日收尾：横向线路图 ---------- */
+  .mini-route-wrap { margin: 12px -16px -14px; padding: 10px 14px 12px; background: var(--card-2); border-radius: 0 0 14px 14px; overflow-x: auto; }
+  .mini-route-wrap .mr-title { font-size: 11px; color: var(--ink-2); margin: 0 0 6px; letter-spacing: 1px; }
+  .mini-route { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+  .mr-node {
+    flex: 0 0 auto;
+    background: var(--card);
+    border: 1.5px solid var(--accent);
+    color: var(--ink);
+    border-radius: 10px;
+    padding: 4px 9px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .mr-node.start { border-color: var(--gold); background: var(--gold-soft); }
+  .mr-edge { flex: 0 0 auto; font-size: 11px; color: var(--ink-2); line-height: 1.2; text-align: center; }
+  .mr-edge b { color: var(--accent); font-size: 13px; display: block; }
+
+  /* ---------- 每日酒店 / 美食 ---------- */
+  .day-extra { margin-top: 10px; border-top: 1px dashed var(--line); padding-top: 8px; }
+  .dx-title { font-size: 12px; color: var(--ink-2); letter-spacing: 1px; margin: 8px 0 6px; }
+  .stay-line { font-size: 13px; color: var(--ink-2); margin: 6px 0 0; }
+  .hotel {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 9px 12px;
+    background: var(--card-2);
+    margin-bottom: 8px;
+  }
+  .hotel .h-price { font-size: 12px; color: var(--ink-2); }
+  .food-line { border-top: 1px dashed var(--line); padding: 6px 0; font-size: 13.5px; }
+  .food-line:first-of-type { border-top: none; }
+  .fl-head { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .fl-tip { color: var(--ink-2); font-size: 12.5px; margin: 1px 0 0; }
+  .tag-scheduled { font-size: 11px; color: var(--ok); border: 1px solid currentColor; border-radius: 4px; padding: 0 4px; }
+
+  /* ---------- 醒目勾选框 ---------- */
+  .chk {
+    appearance: none;
+    -webkit-appearance: none;
+    flex: 0 0 auto;
+    width: 23px;
+    height: 23px;
+    margin: 0;
+    border: 2.5px solid var(--accent);
+    border-radius: 7px;
+    background: var(--card);
+    cursor: pointer;
+    position: relative;
+    transition: background 0.15s;
+  }
+  .chk:checked { background: var(--accent); }
+  .chk:checked::after {
+    content: "✓";
+    position: absolute;
+    inset: 0;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+  .chk:active { transform: scale(1.08); }
+  .chk::before { content: ""; position: absolute; inset: -8px; } /* 扩大手机触控热区 */
+  .s-head .chk, .vote-row .chk, .fl-head .chk { margin-top: -3px; }
+
+  ul.check-list { list-style: none; margin: 0; padding: 0; }
+  ul.check-list > li { display: flex; gap: 10px; align-items: baseline; padding: 8px 0; border-top: 1px dashed var(--line); }
+  ul.check-list > li:first-child { border-top: none; }
+  .cl-note { color: var(--ink-2); font-size: 13px; }
+  .cl-timing { font-size: 12px; color: var(--accent); background: var(--accent-soft); border-radius: 4px; padding: 0 6px; }
+  ol.advice-list { list-style: none; margin: 0; padding: 0; }
+  ol.advice-list > li { display: flex; gap: 10px; padding: 9px 0; border-top: 1px dashed var(--line); }
+  ol.advice-list > li:first-child { border-top: none; }
+  .adv-num { flex: 0 0 auto; padding: 2px 9px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: 11px; font-weight: 700; white-space: nowrap; margin-top: 2px; }
+  .adv-num.gold { background: var(--gold-soft); color: var(--gold); }
+  .adv-fold { cursor: pointer; font-weight: 600; list-style: none; }
+  .adv-fold::-webkit-details-marker { display: none; }
+  .adv-fold::after { content: " ▸"; color: var(--ink-2); }
+  details[open] > .adv-fold::after { content: " ▾"; }
+  .adv-title { font-weight: 600; }
+  .adv-note { color: var(--ink-2); font-size: 13px; margin-top: 2px; }
+  .adv-side { flex: 0 0 auto; display: flex; flex-direction: column; align-items: stretch; gap: 5px; margin-top: 2px; }
+  .adv-side .adv-num { text-align: center; }
+  .done-btn { font: inherit; font-size: 11px; font-weight: 700; line-height: 1; padding: 5px 12px; border-radius: 999px; border: 1px dashed var(--line); background: transparent; color: var(--ink-2); cursor: pointer; white-space: nowrap; }
+  .done-btn:hover { border-color: var(--accent); border-style: solid; color: var(--accent); }
+  li.is-done .adv-num, li.is-done .adv-body { opacity: 0.45; }
+  li.is-done .adv-title { text-decoration: line-through; }
+  li.is-done .done-btn { background: var(--ok); border: 1px solid var(--ok); color: #fff; opacity: 1; }
+
+  /* ---------- 同行提交 ---------- */
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; align-items: center; }
+  button.btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 11px 18px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button.btn.gold { background: var(--gold); }
+  button.btn.ghost { background: var(--card); color: var(--ink); border: 1px solid var(--line); font-weight: 400; }
+  button.btn.ghost:hover { border-color: var(--accent); color: var(--accent); }
+  button.btn:active { transform: translateY(1px); }
+  .who-box { display: flex; align-items: center; gap: 8px; margin: 10px 0; }
+  .who-box input {
+    border: 1.5px solid var(--accent);
+    border-radius: 10px;
+    background: var(--card);
+    color: var(--ink);
+    padding: 8px 10px;
+    font: inherit;
+    width: 130px;
+  }
+  textarea.area {
+    width: 100%;
+    min-height: 96px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--card-2);
+    color: var(--ink);
+    padding: 8px;
+    font: 13px/1.5 inherit;
+    display: none;
+  }
+  textarea.area.show { display: block; }
+  details.vote-city > summary { cursor: pointer; font-weight: 600; padding: 2px 0; list-style: none; }
+  details.vote-city > summary::-webkit-details-marker { display: none; }
+  details.vote-city > summary::after { content: " ▸"; color: var(--ink-2); }
+  details.vote-city[open] > summary::after { content: " ▾"; }
+  .vote-row { display: flex; gap: 10px; align-items: baseline; padding: 7px 0; border-top: 1px dashed var(--line); }
+  .vote-row label { cursor: pointer; font-weight: 500; }
+  .v-names { font-size: 12px; color: var(--gold); }
+  .wish-row { display: flex; gap: 8px; align-items: baseline; padding: 6px 0; border-top: 1px dashed var(--line); }
+  .wish-row:first-child { border-top: none; }
+  .wish-del { border: none; background: none; color: var(--ink-2); cursor: pointer; font-size: 14px; padding: 0 4px; }
+  .wish-input-row { display: flex; gap: 8px; }
+  .wish-input-row input {
+    flex: 1;
+    border: 1.5px solid var(--gold);
+    border-radius: 10px;
+    background: var(--card);
+    color: var(--ink);
+    padding: 9px 10px;
+    font: inherit;
+  }
+
+  #toast {
+    position: fixed;
+    left: 50%;
+    bottom: 26px;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--ink);
+    color: var(--bg);
+    padding: 8px 16px;
+    border-radius: 999px;
+    font-size: 13px;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.25s;
+    z-index: 99;
+    max-width: 86vw;
+  }
+  #toast.show { opacity: 0.95; transform: translateX(-50%); }
+
+  .src-row { border-top: 1px dashed var(--line); padding: 6px 0; font-size: 13px; }
+  .src-row:first-child { border-top: none; }
+  footer { margin-top: 40px; color: var(--ink-2); font-size: 12px; text-align: center; border-top: 1px dashed var(--line); padding-top: 16px; }
+  @media (min-width: 700px) {
+    #app { padding: 0 20px 80px; }
+    .cover { border-radius: 0 0 18px 18px; }
+    .cover h1 { font-size: 30px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="cover" id="cover"></header>
+  <div class="cal" id="cal"></div>
+  <main>
+    <section id="days">
+      <div id="days-list"></div>
+    </section>
+    <section id="checklist"><h2>准备与预订确认</h2><p class="hint">跟随上方日历的选中日期，只显示那段时间该办的事（点日历最后的「全部」看完整时间线）。每项办完后点日期下面的「标记完成」，整项变灰、状态记在本机；动手项都附了操作方式和失败预案。</p><div id="checklist-list"></div>
+      <div class="toolbar"><button class="btn ghost" id="btn-verify-copy" type="button">📋 复制待核验清单（查证后发给 Agent）</button></div>
+    </section>
+    <section id="edit">
+      <h2>我还想去 · 修改行程</h2>
+      <p class="hint">想加地方、换安排？写在这里，点「复制给 Agent」，由它修改 plan.json 后重新渲染——不要手改本页面。</p>
+      <div class="card">
+        <div class="dx-title">🌟 我还想去</div>
+        <div class="wish-input-row">
+          <input id="wish-input" placeholder="例：想加辽宁省博物馆 / 想吃一顿铁锅炖">
+          <button class="btn gold" id="btn-wish-add" type="button">添加</button>
+        </div>
+        <div id="wish-list" style="margin-top:6px"></div>
+        <div class="toolbar"><button class="btn" id="btn-agent-copy" type="button">复制给 Agent 改行程</button></div>
+      </div>
+    </section>
+    <section id="sources"><h2>来源与待核验</h2><p class="hint">标了「待核验」的营业时间 / 价格 / 班次请在出行前自行复核；小红书链接只做搜索直达，不抓取任何平台数据。</p><div id="sources-list"></div></section>
+  </main>
+  <footer id="footer"></footer>
+</div>
+<div id="toast"></div>
+<script id="plan-data" type="application/json">{"plan":{"_note":"结构示例，不是完整数据；用于演示 plan.json 的字段形状与离线渲染。","trip":{"title":"沈阳延吉长春9晚慢食","start_date":"2027-01-10","end_date":"2027-01-19","days":10,"nights":9,"origin":"北京","rhythm":"slow-food","wake_time":"自然醒（赶早市时 07:30 前）","sleep_time":"23:00 前"},"travelers":{"count":2,"groups":"两位同行","rooms_per_night":1},"transport":{"status":"pending","legs":[{"mode":"flight","date":"2027-01-10","departure":{"city":"北京","station":"首都机场","time":"13:00-16:00"},"arrival":{"city":"沈阳","station":"桃仙机场","time":"傍晚"},"status":"pending","note":"以实际出票为准"},{"mode":"high-speed-rail","date":"2027-01-14","departure":{"city":"沈阳","station":"沈阳北","time":"上午"},"arrival":{"city":"延吉","station":"延吉西","time":"午后"},"status":"pending","note":"约 4 小时"},{"mode":"intercity-rail","date":"2027-01-17","departure":{"city":"延吉","station":"延吉西","time":"上午"},"arrival":{"city":"长春","station":"长春","time":"上午"},"status":"pending","note":"约 2 小时"},{"mode":"flight","date":"2027-01-19","departure":{"city":"长春","station":"龙嘉机场","time":"上午"},"arrival":{"city":"北京","station":"首都机场","time":"午后"},"status":"confirmed","note":"已确定买 10-24 上午航班"}]},"stays":[{"city":"沈阳","nights":4,"area":"中街/故宫商圈","status":"recommended","reason":"故宫、帅府、头条胡同步行可达，去沈阳北站约 15-20 分钟","hotels":[]},{"city":"延吉","nights":3,"area":"延大商圈 2 晚 + 民俗园旁民宿 1 晚","status":"recommended","reason":"吃、早市、咖啡、网红墙集中在延大—西市场圈；最后一晚住民俗园旁配合写真","hotels":[]},{"city":"长春","nights":2,"area":"桂林路商圈","status":"recommended","reason":"夜宵氛围最好，伪满皇宫与长影都在 15-25 分钟打车圈","hotels":[]}],"cities":[{"city":"沈阳","nights":4},{"city":"延吉","nights":3},{"city":"长春","nights":2}],"days":[{"date":"2027-01-10","city":"沈阳","theme":"抵达与中街热身","summary":"下午飞抵沈阳，入住中街，晚上用一顿小吃熟悉环境。","periods":{"morning":"出发前留足值机时间。","afternoon":"抵达桃仙机场，地铁或打车进中街。","evening":"头条胡同/中街小吃，23:00 前回酒店。"},"stops":[{"place_id":"sy-zhongjie","time":"19:00","dwell_minutes":120,"transport_mode":"步行","transfer_minutes":0,"distance_km":0,"estimated_cost":"待核验","practical_note":"先从头条胡同走一圈再决定吃什么，避免第一家就吃饱。","time_guard":"22:30 必须回酒店，为第二天故宫留体力","verify":true}]},{"date":"2027-01-11","city":"沈阳","theme":"故宫与西塔","summary":"上午沈阳故宫，午饭后去西塔吃冷面、逛市场，晚上烤肉。","periods":{"morning":"09:00 沈阳故宫，约 3 小时。","afternoon":"打车去西塔，现压大冷面当午饭，逛广藏市场。","evening":"西塔烤肉一条街 + 西塔夜市。"},"stops":[{"place_id":"sy-gugong","time":"09:00","dwell_minutes":180,"transport_mode":"步行","transfer_minutes":0,"distance_km":0,"estimated_cost":"门票约 ¥50/人（待核验）","practical_note":"从正门进先看大政殿，再走中路，最后从北门出直接打车去西塔。","time_guard":"12:00 必须离场，排队超过 20 分钟就先吃饭","verify":true},{"place_id":"sy-xita","time":"13:00","dwell_minutes":240,"transport_mode":"打车","transfer_minutes":20,"distance_km":6.5,"estimated_cost":"人均 ¥80-150","practical_note":"先吃冷面再逛广藏市场，晚上直接在烤肉一条街解决。","time_guard":"17:30 前落座烤肉，晚了要排队","verify":true}]}],"places":[{"id":"sy-zhongjie","type":"market","name":"中街·头条胡同","address":"沈河区中街步行街","map_url":"https://uri.amap.com/search?keyword=沈阳中街头条胡同","source_url":"","hours":"","price":"","verify":true,"tags":["小吃","夜市"]},{"id":"sy-gugong","type":"sight","name":"沈阳故宫","address":"沈河区沈阳路171号","map_url":"https://uri.amap.com/search?keyword=沈阳故宫","source_url":"","hours":"以官方公众号当日信息为准","price":"约 ¥50/人","verify":true,"tags":["历史文化","博物馆"]},{"id":"sy-xita","type":"market","name":"西塔街","address":"和平区西塔街","map_url":"https://uri.amap.com/search?keyword=沈阳西塔街","source_url":"","hours":"","price":"","verify":true,"tags":["冷面","烤肉","市场"]}],"food_groups":[{"city":"沈阳","category":"专程老店","title":"冷面、锅包肉与烤肉","items":[{"place_id":"sy-xita","why":"现压大冷面配锅包肉，晚上烤肉一条街","order_tip":"两人按 6-7 成点，不够再加"}]}],"checklists":{"essentials":[{"title":"薄羽绒/围巾","note":"1 月沈阳约 -15~-3℃，延吉早晨可到 -20℃，务必备足保暖"}],"confirm_ahead":[{"title":"沈阳故宫预约","timing":"开放日前 7 天","note":"官方公众号预约"},{"title":"延吉写真预约","timing":"提前 3 天","note":"确认档期与可接待人数"}],"companion_votes":[]},"sources":[]},"_render":{"rendered_at":"2026-09-13 21:53","slug":"sy-yj-cc-demo","generator_label":"trip-handbook-maker 规则骨架 + 内容生成"}}</script>
+<script>
+(() => {
+  "use strict";
+  const payload = JSON.parse(document.getElementById("plan-data").textContent);
+  const plan = payload.plan;
+  const meta = payload._render || {};
+  const $ = (id) => document.getElementById(id);
+
+  const TYPE_TEXT = { sight: "景点", restaurant: "餐厅", hotel: "酒店", market: "市场", experience: "体验", transport: "交通" };
+  const KIND_TEXT = { arrival: "抵达", transfer: "跨城", return: "返程", stay: "" };
+  const WEEK = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+
+  const esc = (s) => String(s == null ? "" : s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  const placeById = {};
+  (plan.places || []).forEach((p) => { placeById[p.id] = p; });
+  const amapLink = (name) => "https://uri.amap.com/search?keyword=" + encodeURIComponent(name);
+  const tencentLink = (name) => "https://apis.map.qq.com/uri/v1/search?keyword=" + encodeURIComponent(name);
+  const xhsLink = (name) => "https://www.xiaohongshu.com/search_result?keyword=" + encodeURIComponent(name) + "&source=web_explore";
+  const mapLinks = (name, mapUrl) => {
+    const a = mapUrl ? esc(mapUrl) : amapLink(name);
+    return `<a class="s-map" href="${a}">高德地图</a> <a class="s-map" href="${tencentLink(name)}">腾讯地图</a> <a class="s-map xhs" href="${xhsLink(name)}">小红书🔍</a>`;
+  };
+  const verifyBadge = (v) => v ? `<span class="badge warn">待核验</span>` : "";
+
+  function toast(msg) {
+    const t = $("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(t._h);
+    t._h = setTimeout(() => t.classList.remove("show"), 2600);
+  }
+  function copyText(text, okMsg) {
+    const done = () => toast(okMsg || "已复制");
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, () => fallbackCopy(text, done));
+    } else { fallbackCopy(text, done); }
+  }
+  function fallbackCopy(text, done) {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); done(); } catch (e) { toast("复制失败，请手动复制"); }
+    document.body.removeChild(ta);
+  }
+
+  /* ---------- 本机状态：勾选 / 名字 / 愿望 / 视图 ---------- */
+  const storeKey = "thb:" + (() => {
+    const s = (plan.trip.title || "") + plan.trip.start_date + plan.trip.end_date;
+    let h = 5381;
+    for (let i = 0; i < s.length; i++) { h = ((h << 5) + h + s.charCodeAt(i)) >>> 0; }
+    return h.toString(36);
+  })();
+  let state = { wishes: [], done: {}, view: { mode: "one", date: null } };
+  try {
+    const raw = JSON.parse(localStorage.getItem(storeKey) || "null");
+    if (raw && typeof raw === "object") state = Object.assign(state, raw);
+  } catch (e) {}
+  if (!state.done || typeof state.done !== "object") state.done = {};
+  const save = () => { try { localStorage.setItem(storeKey, JSON.stringify(state)); } catch (e) {} };
+
+  const TODAY = new Date().toISOString().slice(0, 10);
+  function defaultViewDate() {
+    const days = plan.days || [];
+    const hit = days.find((d) => d.date === TODAY);
+    return hit ? TODAY : (state.view.date && days.some((d) => d.date === state.view.date) ? state.view.date : days[0].date);
+  }
+  if (!state.view.date) state.view.date = defaultViewDate();
+
+  /* ---------- 封面 ---------- */
+  function renderCover() {
+    const t = plan.trip;
+    const route = [t.origin].concat((plan.cities || []).map((c) => c.city)).concat([t.origin]);
+    const routeHtml = route.map((c, i) => (i ? `<span class="arrow">→</span>` : "") + esc(c)).join("");
+    const pendingLegs = (plan.transport || {}).legs ? plan.transport.legs.filter((l) => l.status !== "confirmed").length : 0;
+    $("cover").innerHTML = `
+      <h1>${esc(t.title)}</h1>
+      <p class="meta">🗓 ${esc(t.start_date)}（${WEEK[new Date(t.start_date).getDay()]}）— ${esc(t.end_date)}（${WEEK[new Date(t.end_date).getDay()]}）｜ ${t.days} 天 ${t.nights} 晚</p>
+      <p class="meta">🧑‍🤝‍🧑 ${esc((plan.travelers || {}).groups || "")} · ${esc(String((plan.travelers || {}).count || ""))} 人 · 每晚 ${esc(String((plan.travelers || {}).rooms_per_night || ""))} 间房</p>
+      <p class="route">${routeHtml}</p>
+      <div class="badges">
+        <span class="badge accent">${esc({ "slow-food": "慢食节奏", sightseeing: "风景为主", culture: "人文为主", balanced: "均衡" }[t.rhythm] || t.rhythm)}</span>
+        <span class="badge">作息：${esc(t.wake_time)} ~ ${esc(t.sleep_time)}</span>
+        ${pendingLegs ? `<span class="badge gold">交通：${pendingLegs} 段待出票</span>` : `<span class="badge">交通：已确认</span>`}
+      </div>`;
+  }
+
+  /* ---------- 日历条 ---------- */
+  function renderCal() {
+    const chips = (plan.days || []).map((d) => {
+      const active = state.view.mode === "one" && d.date === state.view.date;
+      const dd = d.date.slice(5).replace("-", "/");
+      return `<button class="cal-chip${active ? " active" : ""}${d.date === TODAY ? " today" : ""}" data-date="${d.date}" type="button">
+        <span class="c1">${esc(dd)}</span><span class="c2">${WEEK[new Date(d.date + "T00:00:00").getDay()]}·${esc(d.city.slice(0, 1))}</span></button>`;
+    }).join("");
+    $("cal").innerHTML =
+      `<button class="cal-chip cal-all${state.view.mode === "all" ? " active" : ""}" data-mode="all" type="button"><span class="c1" style="font-size:13px">全部</span></button>` + chips;
+  }
+  $("cal").addEventListener("click", (ev) => {
+    const chip = ev.target.closest(".cal-chip");
+    if (!chip) return;
+    if (chip.dataset.mode === "all") {
+      state.view.mode = state.view.mode === "all" ? "one" : "all";
+    } else {
+      state.view.mode = "one";
+      state.view.date = chip.dataset.date;
+    }
+    save();
+    renderCal();
+    renderDays();
+    renderChecklist();
+    if (state.view.mode === "one") {
+      const el = document.getElementById("day-" + state.view.date);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  });
+
+  /* ---------- 逐日（单日视图 / 全部） ---------- */
+  function stopEdge(stop) {
+    const bits = [];
+    if (stop.transport_mode) bits.push(esc(stop.transport_mode));
+    if (stop.transfer_minutes) bits.push(stop.transfer_minutes + " 分钟");
+    if (stop.distance_km) bits.push(stop.distance_km + " km");
+    return bits.length ? bits.join(" · ") : "";
+  }
+  function stopHtml(stop) {
+    const place = placeById[stop.place_id] || {};
+    const name = place.name || stop.place_id;
+    const isTransport = place.type === "transport" || stop.place_id.startsWith("tr-");
+    const edge = stopEdge(stop);
+    return `
+      ${edge ? `<div class="r-edge">${edge}</div>` : ""}
+      <li class="r-stop${isTransport ? " transport" : ""}">
+        <span class="r-dot"></span>
+        <div class="s-head">
+          ${stop.time ? `<span class="s-time">${esc(stop.time)}</span>` : ""}
+          ${isTransport
+            ? `<span class="s-name">${esc(name)}</span>`
+            : `<a class="s-name" href="${place.map_url ? esc(place.map_url) : amapLink(name)}">${esc(name)}</a>`}
+          ${place.type && !isTransport ? `<span class="s-type">${TYPE_TEXT[place.type] || esc(place.type)}</span>` : ""}
+          ${verifyBadge(stop.verify || place.verify)}
+          ${stop.estimated_cost ? `<span class="s-cost">${esc(stop.estimated_cost)}</span>` : ""}
+        </div>
+        ${!isTransport ? `<div style="margin-top:4px">${mapLinks(name, place.map_url)}${place.source_url ? ` <a class="s-map" href="${esc(place.source_url)}">官方来源</a>` : ""}</div>` : ""}
+        ${stop.practical_note ? `<p class="s-note">👉 ${esc(stop.practical_note)}</p>` : ""}
+        ${stop.time_guard ? `<p class="s-guard">⏰ ${esc(stop.time_guard)}</p>` : ""}
+      </li>`;
+  }
+  function miniRouteHtml(day) {
+    const stops = day.stops || [];
+    if (stops.length < 2) return "";
+    const node = (label, cls) => `<span class="mr-node ${cls || ""}">${esc(label)}</span>`;
+    const html = [node(placeShort(stops[0]), "start")];
+    for (let i = 1; i < stops.length; i++) {
+      const s = stops[i];
+      const bits = [];
+      if (s.transport_mode) bits.push(esc(s.transport_mode));
+      if (s.transfer_minutes) bits.push(s.transfer_minutes + "分");
+      html.push(`<span class="mr-edge"><b>→</b>${bits.join(" · ")}</span>`);
+      html.push(node(placeShort(s)));
+    }
+    return `<div class="mini-route-wrap"><p class="mr-title">当日线路</p><div class="mini-route">${html.join("")}</div></div>`;
+  }
+  function placeShort(stop) {
+    const p = placeById[stop.place_id] || {};
+    let n = p.name || stop.place_id;
+    n = n.replace(/（[^）]*）/g, "").trim();
+    if (n.includes("→")) {
+      const parts = n.split("→").map((s) => s.replace(/机场|车站|站/g, "").trim());
+      return parts.map((s) => s.slice(0, 2)).join("→");
+    }
+    return n.slice(0, 8);
+  }
+  /* ---------- 住宿（唯一推荐，按入住日匹配） ---------- */
+  /* 出行方式的落点词：不再硬编码"机场"，按当天实际交通方式取词 */
+  function departWords(day) {
+    const leg = ((plan.transport && plan.transport.legs) || []).find((l) => l.date === day.date);
+    const mode = leg && leg.mode;
+    if (mode === "drive") return { place: "取车/上路", verb: "自驾出发", guard: "出发前检查油量与证件" };
+    if (mode === "flight") return { place: "机场", verb: "按航班时间前往机场", guard: "起飞" };
+    if (mode === "high-speed-rail" || mode === "intercity-rail" || mode === "normal-rail")
+      return { place: "车站", verb: "按车次时间前往车站", guard: "发车" };
+    if (mode === "coach") return { place: "客运站", verb: "按班次时间前往客运站", guard: "发车" };
+    return { place: "车站/机场", verb: "按车次/航班时间前往场站", guard: "发车/起飞" };
+  }
+  function stayForDay(day) {
+    const stays = (plan.stays || []).filter((s) => s.city === day.city);
+    if (stays.length <= 1) return stays[0];
+    const dated = stays.filter((s) => s.checkin && s.checkin <= day.date)
+      .sort((a, b) => (a.checkin < b.checkin ? 1 : -1));
+    return dated[0] || stays[0];
+  }
+  function hotelBox(day) {
+    const stay = stayForDay(day);
+    if (day.kind === "return") {
+      const w = departWords(day);
+      return `<div class="day-extra"><div class="stay-line">🧳 返程日：退房后${w.verb}，买手信别误了时间。</div></div>`;
+    }
+    if (!stay) return "";
+    const prevStay = stayForDay({ city: day.city, date: addDays(day.date, -1) });
+    const lodgingChanged = day.kind === "arrival" || day.kind === "transfer" || prevStay !== stay;
+    if (lodgingChanged) {
+      const h = (stay.hotels || [])[0] || {};
+      const name = h.name || "推荐酒店";
+      return `<div class="day-extra"><div class="dx-title">🏨 今日入住（已为你选好）</div>
+        <div class="s-head"><span class="badge accent">${esc(stay.area || "待定")}</span>${stay.nights ? `<span class="badge">住 ${stay.nights} 晚</span>` : ""}</div>
+        <div class="hotel">
+          <div class="s-head"><span class="s-name">${esc(name)}</span>${h.price_range ? `<span class="h-price">${esc(h.price_range)}</span>` : ""}</div>
+          ${h.note ? `<div class="fl-tip">${esc(h.note)}</div>` : ""}
+          <div style="margin-top:4px">${mapLinks(name, h.place_id && placeById[h.place_id] ? placeById[h.place_id].map_url : "")}</div>
+        </div>
+        ${stay.reason ? `<div class="fl-tip" style="margin-top:6px">💡 ${esc(stay.reason)}</div>` : ""}
+      </div>`;
+    }
+    return `<div class="day-extra"><div class="stay-line">🏨 今晚住宿：${esc(stay.area || "同前")}（同前几晚）</div></div>`;
+  }
+  function foodBox(day) {
+    const groups = (plan.food_groups || []).filter((g) => g.city === day.city);
+    const stopIds = new Set((day.stops || []).map((s) => s.place_id));
+    const lines = [];
+    groups.forEach((g) => {
+      (g.items || []).forEach((item) => {
+        if (!(item.place_id && stopIds.has(item.place_id))) return; // 只显示今天行程里出现的
+        const place = placeById[item.place_id];
+        const name = place ? place.name : (item.name || g.title);
+        lines.push(`<div class="food-line">
+          <div class="fl-head">
+            <a class="s-name" href="${place.map_url ? esc(place.map_url) : amapLink(name)}">${esc(name)}</a>
+            <span class="s-type">${esc(g.category)}</span>
+          </div>
+          ${item.why ? `<div class="fl-tip">${esc(item.why)}</div>` : ""}
+          ${item.order_tip ? `<div class="fl-tip">💡 ${esc(item.order_tip)}</div>` : ""}
+        </div>`);
+      });
+    });
+    if (!lines.length) return "";
+    return `<div class="day-extra"><div class="dx-title">🍜 今日美食</div>${lines.join("")}</div>`;
+  }
+  function dayCardHtml(day) {
+    const d = new Date(day.date + "T00:00:00");
+    const dateText = day.date.slice(5).replace("-", "-") + " " + WEEK[d.getDay()];
+    const periods = day.periods || {};
+    const periodRow = (tag, text) => text ? `<div class="p"><span class="p-tag">${tag}</span><p>${esc(text)}</p></div>` : "";
+    return `
+      <details class="day card" id="day-${day.date}" ${state.view.mode === "one" || day.date === state.view.date ? "open" : ""}>
+        <summary>
+          <span class="d-date">${esc(dateText)}</span>
+          <span class="d-city">${esc(day.city)}</span>
+          ${KIND_TEXT[day.kind] ? `<span class="d-kind kind-${esc(day.kind)}">${KIND_TEXT[day.kind]}</span>` : ""}
+          <span>${day.theme ? esc(day.theme) : ""}</span>
+        </summary>
+        ${day.summary ? `<p class="d-summary">${esc(day.summary)}</p>` : ""}
+        <div class="periods">
+          ${periodRow("早", periods.morning)}
+          ${periodRow("午", periods.afternoon)}
+          ${periodRow("晚", periods.evening)}
+        </div>
+        <ol class="route">${(day.stops || []).map((s) => stopHtml(s)).join("")}</ol>
+        ${miniRouteHtml(day)}
+        ${hotelBox(day)}
+        ${foodBox(day)}
+      </details>`;
+  }
+  function renderDays() {
+    const days = plan.days || [];
+    if (state.view.mode === "one") {
+      const day = days.find((d) => d.date === state.view.date) || days[0];
+      $("days-list").innerHTML = dayCardHtml(day);
+    } else {
+      $("days-list").innerHTML = days.map((d) => dayCardHtml(d)).join("");
+    }
+  }
+
+  /* ---------- 准备与预订（跟随选中日期） ---------- */
+  function addDays(iso, n) {
+    const d = new Date(iso + "T00:00:00");
+    d.setDate(d.getDate() + n);
+    return d.toISOString().slice(0, 10);
+  }
+  function fmtDue(iso) {
+    return parseInt(iso.slice(5, 7), 10) + "月" + parseInt(iso.slice(8, 10), 10) + "日";
+  }
+  function ckKey(item) { return (item.due || "any") + "|" + item.title; }
+  function doneBadge(arr) {
+    const n = arr.filter((x) => state.done[ckKey(x)]).length;
+    return n ? ` <span class="cl-timing">已完成 ${n}/${arr.length}</span>` : "";
+  }
+  function adviceRow(item) {
+    const dueText = item.due ? fmtDue(item.due) : "全程";
+    const key = ckKey(item);
+    const done = !!state.done[key];
+    return `
+      <li class="${done ? "is-done" : ""}">
+        <div class="adv-side">
+          <span class="adv-num${item.due && item.due < plan.trip.start_date ? "" : " gold"}">📅 ${esc(dueText)}</span>
+          <button type="button" class="done-btn" data-key="${esc(key)}">${done ? "✓ 已完成" : "标记完成"}</button>
+        </div>
+        <div class="adv-body">
+          <div class="adv-title">${esc(item.title)} ${item.timing ? `<span class="cl-timing">${esc(item.timing)}</span>` : ""}</div>
+          ${item.note ? `<div class="adv-note">${esc(item.note)}</div>` : ""}
+        </div>
+      </li>`;
+  }
+  function foldCard(title, arr) {
+    return `<details class="card"><summary class="adv-fold">${esc(title)}${doneBadge(arr)}</summary><ol class="advice-list" style="margin-top:8px">${arr.map(adviceRow).join("")}</ol></details>`;
+  }
+  function openCard(title, arr) {
+    return arr.length ? `<div class="card"><div class="dx-title">${esc(title)}${doneBadge(arr)}</div><ol class="advice-list">${arr.map(adviceRow).join("")}</ol></div>` : "";
+  }
+  function renderChecklist() {
+    const cl = plan.checklists || {};
+    const items = (cl.confirm_ahead || []).slice().sort((a, b) => (a.due || "9999") < (b.due || "9999") ? -1 : 1);
+    const ess = cl.essentials || [];
+    let html = "";
+    if (state.view.mode === "all") {
+      html = openCard("📅 全部预订时间线（按日期排序，照着顺序办）", items) +
+        openCard("🎒 行装备忘（全程通用）", ess);
+    } else {
+      const D = state.view.date;
+      const start = plan.trip.start_date;
+      const todayItems = items.filter((x) => x.due === D);
+      if (D === start) {
+        // 第一天：当天事项 + 出发前准备 + 行装备忘，全部展开
+        const pre = items.filter((x) => x.due && x.due < start);
+        const noDue = items.filter((x) => !x.due);
+        html = openCard("🧭 今天要办的事（" + fmtDue(D) + "）", todayItems) +
+          (noDue.length ? openCard("📌 随时留意", noDue) : "") +
+          openCard("📞 出发前的准备（应已办好）", pre) +
+          openCard("🎒 行装备忘（全程通用）", ess);
+      } else {
+        // 其他天：只显示当天到期的事项
+        html = todayItems.length
+          ? openCard("🧭 今天要办的事（" + fmtDue(D) + "）", todayItems)
+          : `<div class="card"><p class="hint" style="margin:0">😴 这天没有要办的预订事项，安心玩。</p></div>`;
+      }
+    }
+    $("checklist-list").innerHTML = html;
+  }
+  $("checklist-list").addEventListener("click", (ev) => {
+    const btn = ev.target.closest(".done-btn");
+    if (!btn) return;
+    const key = btn.dataset.key;
+    if (state.done[key]) delete state.done[key];
+    else state.done[key] = true;
+    save();
+    renderChecklist();
+  });
+
+  /* ---------- 同行提交（勾选 + 愿望 + 汇总） ---------- */
+  function cityOfPlace(p) {
+    const day = (plan.days || []).find((d) => (d.stops || []).some((s) => s.place_id === p.id));
+    if (day) return day.city;
+    const stay = (plan.stays || []).find((s) => (s.hotels || []).some((h) => h.place_id === p.id));
+    return stay ? stay.city : "其他";
+  }
+  function verifyListText() {
+    const lines = ["【待核验清单】出行前逐项查证，把实际值告诉我（示例：3. 实际 ¥50/人，周一闭馆，公众号预约）", ""];
+    let n = 0;
+    (plan.days || []).forEach((d) => (d.stops || []).forEach((s) => {
+      if (!s.verify) return;
+      const p = placeById[s.place_id] || {};
+      n++;
+      lines.push(`${n}. ${d.date.slice(5)} ${p.name || s.place_id} · 费用/班次 · 当前：${s.estimated_cost || "（空）"}`);
+    }));
+    (plan.places || []).forEach((p) => {
+      if (!p.verify) return;
+      if (p.hours) { n++; lines.push(`${n}. ${p.name} · 营业时间 · 当前：${p.hours}`); }
+      if (p.price) { n++; lines.push(`${n}. ${p.name} · 价格 · 当前：${p.price}`); }
+    });
+    if (!n) return "当前没有待核验项。";
+    return lines.join("\n");
+  }
+  function renderWishes() {
+    $("wish-list").innerHTML = (state.wishes || []).map((w, i) =>
+      `<div class="wish-row"><span>🌟 ${esc(w.t)}</span>${w.who ? `<span class="v-names">${esc(w.who)}</span>` : ""}<button class="wish-del" data-i="${i}" type="button" title="删除">✕</button></div>`).join("")
+      || `<div class="hint">还没有愿望，加一条吧。</div>`;
+    document.querySelectorAll(".wish-del").forEach((b) => b.addEventListener("click", () => {
+      state.wishes.splice(parseInt(b.dataset.i, 10), 1);
+      save();
+      renderWishes();
+    }));
+  }
+
+  function bindToolbar() {
+    $("btn-wish-add").addEventListener("click", () => {
+      const text = $("wish-input").value.trim();
+      if (!text) { toast("先写下想去的地方"); return; }
+      state.wishes.push({ t: text });
+      $("wish-input").value = "";
+      save();
+      renderWishes();
+    });
+    $("wish-input").addEventListener("keydown", (ev) => { if (ev.key === "Enter") { ev.preventDefault(); $("btn-wish-add").click(); } });
+    $("btn-agent-copy").addEventListener("click", () => {
+      if (!(state.wishes || []).length) { toast("先写下你想加或想改的内容"); return; }
+      const lines = ["【行程修改请求】", "攻略：" + plan.trip.title + "（" + plan.trip.start_date + " ~ " + plan.trip.end_date + "）", "", "我还想去 / 想改："];
+      state.wishes.forEach((w) => lines.push(`- ${w.t}`));
+      lines.push("", "请据此调整 trips/" + (meta.slug || "this-trip") + "/plan.json 后重新渲染 handbook.html。");
+      copyText(lines.join("\n"), "已复制，去发给 Agent");
+    });
+    $("btn-verify-copy").addEventListener("click", () => copyText(verifyListText(), "已复制待核验清单，查证后把实际值发到对话里"));
+  }
+
+  /* ---------- 来源与页脚 ---------- */
+  function renderSources() {
+    const rows = [];
+    const seen = {};
+    (plan.places || []).forEach((p) => {
+      if (!p.source_url || seen[p.source_url]++) return;
+      rows.push(`<div class="src-row">📍 <a href="${esc(p.source_url)}">${esc(p.name)} 官方/公开页面</a></div>`);
+    });
+    (plan.sources || []).forEach((s) => {
+      const url = typeof s === "string" ? s : s.url;
+      const label = typeof s === "string" ? url : (s.title || s.url);
+      if (!url || seen[url]++) return;
+      rows.push(`<div class="src-row">🔗 <a href="${esc(url)}">${esc(label)}</a>${s.note ? " — " + esc(s.note) : ""}</div>`);
+    });
+    $("sources-list").innerHTML = rows.join("") || `<p class="hint">暂无官方来源链接；所有「待核验」项请以官方渠道为准，小红书🔍可看大家的高赞笔记。</p>`;
+  }
+  function renderFooter() {
+    $("footer").innerHTML = `trip-handbook-maker · 单文件攻略页 · 数据生成时间 ${esc(meta.rendered_at || "-")}<br>内容由 ${esc(meta.generator_label || "trip-handbook-maker")} 生成，动态信息（价格/营业时间/班次）请人工复核后再依赖`;
+  }
+
+  document.title = plan.trip.title || "旅行攻略";
+  renderCover();
+  renderCal();
+  renderDays();
+  renderChecklist();
+  renderWishes();
+  renderSources();
+  renderFooter();
+  bindToolbar();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# 运行期临时文件
+.tmp-*/
+trips/*/cost.log
+
+# 本地模型配置（含 Key，绝不提交）
+config.json
+
+# 系统文件
+.DS_Store
+Thumbs.db

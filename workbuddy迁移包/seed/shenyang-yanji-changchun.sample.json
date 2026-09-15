@@ -1,0 +1,211 @@
+{
+  "_note": "结构示例，不是完整数据；用于演示 plan.json 的字段形状与离线渲染。",
+  "trip": {
+    "title": "沈阳延吉长春9晚慢食",
+    "start_date": "2027-01-10",
+    "end_date": "2027-01-19",
+    "days": 10,
+    "nights": 9,
+    "origin": "A市",
+    "rhythm": "slow-food",
+    "wake_time": "自然醒（赶早市时 07:30 前）",
+    "sleep_time": "23:00 前"
+  },
+  "travelers": {
+    "count": 2,
+    "groups": "两位同行",
+    "rooms_per_night": 1
+  },
+  "transport": {
+    "status": "pending",
+    "legs": [
+      {
+        "mode": "flight",
+        "date": "2027-01-10",
+        "departure": { "city": "北京", "station": "首都机场", "time": "13:00-16:00" },
+        "arrival": { "city": "沈阳", "station": "桃仙机场", "time": "傍晚" },
+        "status": "pending",
+        "note": "以实际出票为准"
+      },
+      {
+        "mode": "high-speed-rail",
+        "date": "2027-01-14",
+        "departure": { "city": "沈阳", "station": "沈阳北", "time": "上午" },
+        "arrival": { "city": "延吉", "station": "延吉西", "time": "午后" },
+        "status": "pending",
+        "note": "约 4 小时"
+      },
+      {
+        "mode": "intercity-rail",
+        "date": "2027-01-17",
+        "departure": { "city": "延吉", "station": "延吉西", "time": "上午" },
+        "arrival": { "city": "长春", "station": "长春", "time": "上午" },
+        "status": "pending",
+        "note": "约 2 小时"
+      },
+      {
+        "mode": "flight",
+        "date": "2027-01-19",
+        "departure": { "city": "长春", "station": "龙嘉机场", "time": "上午" },
+        "arrival": { "city": "北京", "station": "首都机场", "time": "午后" },
+        "status": "confirmed",
+        "note": "已确定买 10-24 上午航班"
+      }
+    ]
+  },
+  "stays": [
+    {
+      "city": "沈阳",
+      "nights": 4,
+      "area": "中街/故宫商圈",
+      "status": "recommended",
+      "reason": "故宫、帅府、头条胡同步行可达，去沈阳北站约 15-20 分钟",
+      "hotels": []
+    },
+    {
+      "city": "延吉",
+      "nights": 3,
+      "area": "延大商圈 2 晚 + 民俗园旁民宿 1 晚",
+      "status": "recommended",
+      "reason": "吃、早市、咖啡、网红墙集中在延大—西市场圈；最后一晚住民俗园旁配合写真",
+      "hotels": []
+    },
+    {
+      "city": "长春",
+      "nights": 2,
+      "area": "桂林路商圈",
+      "status": "recommended",
+      "reason": "夜宵氛围最好，伪满皇宫与长影都在 15-25 分钟打车圈",
+      "hotels": []
+    }
+  ],
+  "cities": [
+    { "city": "沈阳", "nights": 4 },
+    { "city": "延吉", "nights": 3 },
+    { "city": "长春", "nights": 2 }
+  ],
+  "days": [
+    {
+      "date": "2027-01-10",
+      "city": "沈阳",
+      "theme": "抵达与中街热身",
+      "summary": "下午飞抵沈阳，入住中街，晚上用一顿小吃熟悉环境。",
+      "periods": {
+        "morning": "出发前留足值机时间。",
+        "afternoon": "抵达桃仙机场，地铁或打车进中街。",
+        "evening": "头条胡同/中街小吃，23:00 前回酒店。"
+      },
+      "stops": [
+        {
+          "place_id": "sy-zhongjie",
+          "time": "19:00",
+          "dwell_minutes": 120,
+          "transport_mode": "步行",
+          "transfer_minutes": 0,
+          "distance_km": 0,
+          "estimated_cost": "待核验",
+          "practical_note": "先从头条胡同走一圈再决定吃什么，避免第一家就吃饱。",
+          "time_guard": "22:30 必须回酒店，为第二天故宫留体力",
+          "verify": true
+        }
+      ]
+    },
+    {
+      "date": "2027-01-11",
+      "city": "沈阳",
+      "theme": "故宫与西塔",
+      "summary": "上午沈阳故宫，午饭后去西塔吃冷面、逛市场，晚上烤肉。",
+      "periods": {
+        "morning": "09:00 沈阳故宫，约 3 小时。",
+        "afternoon": "打车去西塔，现压大冷面当午饭，逛广藏市场。",
+        "evening": "西塔烤肉一条街 + 西塔夜市。"
+      },
+      "stops": [
+        {
+          "place_id": "sy-gugong",
+          "time": "09:00",
+          "dwell_minutes": 180,
+          "transport_mode": "步行",
+          "transfer_minutes": 0,
+          "distance_km": 0,
+          "estimated_cost": "门票约 ¥50/人（待核验）",
+          "practical_note": "从正门进先看大政殿，再走中路，最后从北门出直接打车去西塔。",
+          "time_guard": "12:00 必须离场，排队超过 20 分钟就先吃饭",
+          "verify": true
+        },
+        {
+          "place_id": "sy-xita",
+          "time": "13:00",
+          "dwell_minutes": 240,
+          "transport_mode": "打车",
+          "transfer_minutes": 20,
+          "distance_km": 6.5,
+          "estimated_cost": "人均 ¥80-150",
+          "practical_note": "先吃冷面再逛广藏市场，晚上直接在烤肉一条街解决。",
+          "time_guard": "17:30 前落座烤肉，晚了要排队",
+          "verify": true
+        }
+      ]
+    }
+  ],
+  "places": [
+    {
+      "id": "sy-zhongjie",
+      "type": "market",
+      "name": "中街·头条胡同",
+      "address": "沈河区中街步行街",
+      "map_url": "https://uri.amap.com/search?keyword=沈阳中街头条胡同",
+      "source_url": "",
+      "hours": "",
+      "price": "",
+      "verify": true,
+      "tags": ["小吃", "夜市"]
+    },
+    {
+      "id": "sy-gugong",
+      "type": "sight",
+      "name": "沈阳故宫",
+      "address": "沈河区沈阳路171号",
+      "map_url": "https://uri.amap.com/search?keyword=沈阳故宫",
+      "source_url": "",
+      "hours": "以官方公众号当日信息为准",
+      "price": "约 ¥50/人",
+      "verify": true,
+      "tags": ["历史文化", "博物馆"]
+    },
+    {
+      "id": "sy-xita",
+      "type": "market",
+      "name": "西塔街",
+      "address": "和平区西塔街",
+      "map_url": "https://uri.amap.com/search?keyword=沈阳西塔街",
+      "source_url": "",
+      "hours": "",
+      "price": "",
+      "verify": true,
+      "tags": ["冷面", "烤肉", "市场"]
+    }
+  ],
+  "food_groups": [
+    {
+      "city": "沈阳",
+      "category": "专程老店",
+      "title": "冷面、锅包肉与烤肉",
+      "items": [
+        { "place_id": "sy-xita", "why": "现压大冷面配锅包肉，晚上烤肉一条街", "order_tip": "两人按 6-7 成点，不够再加" }
+      ]
+    }
+  ],
+  "checklists": {
+    "essentials": [
+      { "title": "薄羽绒/围巾", "note": "1 月沈阳约 -15~-3℃，延吉早晨可到 -20℃，务必备足保暖" }
+    ],
+    "confirm_ahead": [
+      { "title": "沈阳故宫预约", "timing": "开放日前 7 天", "note": "官方公众号预约" },
+      { "title": "延吉写真预约", "timing": "提前 3 天", "note": "确认档期与可接待人数" }
+    ],
+    "companion_votes": []
+  },
+  "sources": []
+}
+

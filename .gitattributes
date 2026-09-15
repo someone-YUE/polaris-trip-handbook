@@ -1,0 +1,14 @@
+# 统一行尾，避免跨平台协作产生无意义 diff
+* text=auto
+
+# 二进制文件不做行尾转换
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.zip binary
+
+# Windows 脚本保留 CRLF
+*.bat text eol=crlf
+*.ps1 text eol=crlf

@@ -1,0 +1,18 @@
+{
+  "_note": "交通参考价表。本项目**不编造数据**：请填入你实际查询到的值，来源写进 source_note。",
+  "_schema": {
+    "routes": {
+      "<出发地或站名> -> <到达地或站名>": {
+        "<mode>": {
+          "fare_per_person": "单人票面价（元），未知填 null",
+          "hours": "总耗时（小时，含等待），未知填 null",
+          "transfer_cost_per_person": "两端接驳合计（元/人），未知填 null",
+          "transfer_hours": "接驳耗时（小时，若已含在 hours 则填 0）",
+          "comfort_score": "舒适分 0-10（可选，缺省按方式取值）",
+          "source_note": "数据出处，例如「12306 当日查询」"
+        }
+      }
+    }
+  },
+  "routes": {}
+}
